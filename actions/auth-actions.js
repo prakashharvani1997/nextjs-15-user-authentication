@@ -26,8 +26,6 @@ export async function signUp(prevState, formData) {
   }
 
  const hashedPassword = hashUserPassword(password)
-
- 
  try {
      const id =  createUser(email,hashedPassword)
      await createAuthSession(id);

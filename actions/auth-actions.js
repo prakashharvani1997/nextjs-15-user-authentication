@@ -1,8 +1,8 @@
-'use server';
+"use server";
 
 import { createAuthSession } from "@/lib/auth";
-import { hashUserPassword } from "@/lib/hash";
-import { createUser } from "@/lib/user";
+import { hashUserPassword, verifyPassword } from "@/lib/hash";
+import { createUser, getUserByEmail } from "@/lib/user";
 import { redirect } from "next/dist/server/api-utils";
 
 export async function signUp(prevState, formData) {
@@ -25,20 +25,55 @@ export async function signUp(prevState, formData) {
     };
   }
 
- const hashedPassword = hashUserPassword(password)
- try {
-     const id =  createUser(email,hashedPassword)
-     await createAuthSession(id);
-     redirect('/training')
-
+  const hashedPassword = hashUserPassword(password);
+  try {
+    const id = createUser(email, hashedPassword);
+    await createAuthSession(id);
+    redirect("/training");
   } catch (error) {
-    if(error.code == 'SQLITE_CONSTRAINT_UNIQUE'){
-        return {
-            errors:{
-                email:'Account already exists with this email.'
-            }
+    if (error.code == "SQLITE_CONSTRAINT_UNIQUE") {
+      return {
+        errors: {
+          email: "Account already exists with this email."
         }
+      };
     }
-    throw error 
+    throw error;
+  }
+}
+
+export async function login(prevState, formData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+
+  const existingUser = getUserByEmail(email);
+
+  if (!existingUser) {
+    return {
+      errors: {
+        email: "Could not authenticate with user,please check credentials."
+      }
+    };
+  }
+
+  const isValidPassword = verifyPassword(existingUser.password);
+
+  if (!isValidPassword) {
+    return {
+      errors: {
+        password: "Could not authenticate with user,please check credentials."
+      }
+    };
+  }
+
+  await createAuthSession(existingUser.id);
+  redirect("/training");
+}
+
+export async function auth(mode, prevState, formData) {
+  if (mode == "login") {
+    return login(prevState, formData);
+  } else {
+    return signUp(prevState, formData);
   }
 }

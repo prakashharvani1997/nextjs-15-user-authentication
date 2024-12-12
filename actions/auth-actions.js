@@ -3,7 +3,7 @@
 import { createAuthSession } from "@/lib/auth";
 import { hashUserPassword, verifyPassword } from "@/lib/hash";
 import { createUser, getUserByEmail } from "@/lib/user";
-import { redirect } from "next/dist/server/api-utils";
+import { redirect } from "next/navigation";
 
 export async function signUp(prevState, formData) {
   const email = formData.get("email");
@@ -56,7 +56,7 @@ export async function login(prevState, formData) {
     };
   }
 
-  const isValidPassword = verifyPassword(existingUser.password);
+  const isValidPassword = verifyPassword(existingUser.password,password);
 
   if (!isValidPassword) {
     return {
